@@ -51,14 +51,9 @@ class ZapAuthentication(object):
         print('User Auth Configured')
         return user_id
 
-
-    def start_spider(self, user_id):
-        self.zap.spider.scan_as_user(self.context_id, user_id, self.targetUrl, recurse='true')
-        print('Started Scanning with Authentication')
-
     def getAuthenticated(self):
         self.set_include_in_context()
         self.set_form_based_auth()
         self.set_logged_in_indicator()
         user_id_response = self.set_user_auth_config()
-        self.start_spider(user_id_response)
+        return (self.context_id, user_id_response)
