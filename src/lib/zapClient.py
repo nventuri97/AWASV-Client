@@ -1,5 +1,6 @@
 import os, sys, getopt, time, json, signal
 from pprint import pprint
+from lib.stopException import stopException
 from lib.zapv2 import ZAPv2
 from lib.zapAuthentication import ZapAuthentication
 
@@ -10,26 +11,35 @@ class ZapClient(object):
             self.zap= ZAPv2(ip=zapIp, apikey=apiKey, proxies={'http': 'http://'+proxy, 'https': 'https://'+proxy})
         else:
             self.zap= ZAPv2(ip=zapIp, apikey=apiKey)
-            
+
         signal.signal(signal.SIGTERM, self.stopSignal)
         signal.signal(signal.SIGINT, self.stopSignal)
 
         print("Initial ZAP REST Client configuration done!")
 
-    def stopSignal():
-        pass
+    def stopSignal(self):
+        raise stopException
+    #     if int(self.zap.spider.status()) < 100:
+    #         self.zap.spider.stop_all_scans()
+    #     if self.zap.ajaxSpider.status=='running':
+    #         self.zap.spider.stop_all_scans()
+    #     if int(self.zap.ascan.status()) < 100:
+    #         self.zap.ascan.stop_all_scans()
+    #     print("Analysis interrupted by user")
+    #     return self.zap.core.jsonreport()
+
 
     #----------------------------------------SPIDER BLOCK----------------------------------
 
-    def spider(self, target, context_id, user_id):
+    def spider(self, target, context_id=None, user_id=None):
         # The scan returns a scan id to support concurrent scanning
         #if scan is authenticated or not
         if context_id is not None and user_id is not None :
-            scanID = self.zap.spider.scan(context_id, user_id, target, recurse='true')
+            self.zap.spider.scan_as_user(context_id, user_id, target, recurse='true')
         else:
             scanID = self.zap.spider.scan(target)
 
-        timeout = time.time() + self.zap.spider.option_max_duration   # max duration from now
+        timeout = time.time() + int(self.zap.spider.option_max_duration)   # max duration from now
         while int(self.zap.spider.status(scanID)) < 100:
             if time.time() > timeout:
                 break
@@ -56,18 +66,18 @@ class ZapClient(object):
         print("Spider configured")
 
     #-------------------------------------AJAX SPIDER BLOCK----------------------------------
-    def ajaxSpider(self, target, context_id):
+    def ajaxSpider(self, target, context_id=None):
         if context_id is not None:
             scanID= self.zap.ajaxSpider.scan(target, contextname=context_id)
         else:
             scanID = self.zap.ajaxSpider.scan(target)
 
-        timeout = time.time() + self.zap.ajaxSpider.option_max_duration   # max duration from now
+        timeout = time.time() + int(self.zap.ajaxSpider.option_max_duration)   # max duration from now
         # Loop until the ajax spider has finished or the timeout has exceeded
         while self.zap.ajaxSpider.status == 'running':
             if time.time() > timeout:
                 break
-        print('Ajax Spider status' + self.zap.ajaxSpider.status)
+        print('Ajax Spider status ' + self.zap.ajaxSpider.status)
         time.sleep(2)
 
         print('Ajax Spider completed')
@@ -121,7 +131,7 @@ class ZapClient(object):
 
     def activeScan(self, target):
         scanID = self.zap.ascan.scan(target)
-        timeout = time.time() + self.zap.ascan.option_max_scan_duration_in_mins   # max duration from now
+        timeout = time.time() + int(self.zap.ascan.option_max_scan_duration_in_mins)   # max duration from now
         while int(self.zap.ascan.status(scanID)) < 100:
             if time.time() > timeout:
                 break
@@ -153,7 +163,7 @@ class ZapClient(object):
     def execute(self, configAttack):
         ipTarget=configAttack["ipTarget"]
         strength=configAttack["strength"]
-
+        auth=False
         if 'initial-page' in configAttack:
             initialPage=configAttack["initial-page"]
             target = 'http://'+ipTarget+'/'+initialPage
@@ -189,31 +199,41 @@ class ZapClient(object):
         else:
             print("Analysis with default configuration and "+strength+" at target "+target)
 
+        try:
+            if strength=="low":
+                #Spider return a list of URLs that can be process
+                if not auth:
+                    spiderResults=self.spider(target)
+                    ajaxResults=self.ajaxSpider(target)
+                else:
+                    spiderResult=self.spider(target, context_id, user_id)
+                    ajaxResults=self.ajaxSpider(target, context_id)
+            elif strength=="medium":
+                if not auth:
+                    spiderResults=self.spider(target)
+                    ajaxResults=self.ajaxSpider(target)
+                else:
+                    spiderResult=self.spider(target, context_id, user_id)
+                    ajaxResults=self.ajaxSpider(target, context_id)
+                self.passiveScan()
+            elif strength=="high":
+                if not auth:
+                    spiderResults=self.spider(target)
+                    ajaxResults=self.ajaxSpider(target)
+                else:
+                    spiderResult=self.spider(target, context_id, user_id)
+                    ajaxResults=self.ajaxSpider(target, context_id)
+                self.passiveScan()
+                self.activeScan(target)
+            else:
+                print("Strength value not permitted")
+        except stopException: 
+            if int(self.zap.spider.status()) < 100:
+                self.zap.spider.stop_all_scans()
+            if self.zap.ajaxSpider.status=='running':
+                self.zap.spider.stop_all_scans()
+            if int(self.zap.ascan.status()) < 100:
+                self.zap.ascan.stop_all_scans()
+            print("Analysis interrupted by user")
 
-        if strength=="low":
-            #Spider return a list of URLs that can be process
-            if not auth:
-                spiderResults=self.spider(target)
-                ajaxResults=self.ajaxSpider(target)
-            else:
-                spiderResult=self.spider(target, context_id, user_id)
-                ajaxResults=self.ajaxSpider(target, context_id)
-        elif strength=="medium":
-            if not auth:
-                spiderResults=self.spider(target)
-                ajaxResults=self.ajaxSpider(target)
-            else:
-                spiderResult=self.spider(target, context_id, user_id)
-                ajaxResults=self.ajaxSpider(target, context_id)
-            self.passiveScan()
-        elif strength=="high":
-            if not auth:
-                spiderResults=self.spider(target)
-                ajaxResults=self.ajaxSpider(target)
-            else:
-                spiderResult=self.spider(target, context_id, user_id)
-                ajaxResults=self.ajaxSpider(target, context_id)
-            self.passiveScan()
-            self.activeScan(target)
-        else:
-            print("Strength value not permitted")
+        return self.zap.core.jsonreport()

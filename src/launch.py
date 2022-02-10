@@ -44,7 +44,10 @@ while True:
     if os.path.isfile("./attackFile.json"):
         f=open("./attackFile.json")
         configAttack=json.load(f)
-        client.execute(configAttack=configAttack)
+        report=client.execute(configAttack=configAttack)
+        with open('./report.json', 'w') as f:
+            f.write(report)
+        
         #performe attack
         # os.remove("./attackFile.json")
         break
