@@ -1,0 +1,39 @@
+{
+    "urlTarget": "The URL of the target application",
+    "strength": "The strength with which the analysis will be runn (low, medium, high)",
+    "authenticated" : {
+        "username": "The username to be used to log-in the application",
+        "passwd": "The password to be used to log-in the appplication",
+        "login-page": "The page where the login form is (e.g. login.php)",
+        "logout-page": "The page where the logout happens (e.g. logout.php)"
+    },
+    "configuration": {
+        "spider": {
+            "max-children": "The maximum number of child nodes (per node) that can be crawled (default value 0 = no limit)",
+            "max-depth": "The maximum depth the spider can crawl (default value 0 = no limit)",
+            "max-duration": "The maximum duration the spider can crawl (in minutes)",
+            "max-dps": "The maximum size, in bytes, that a response might have to be parsed. This allows the spider to skip big responses/files"
+        },
+        "ajax-spider": {
+            "max-crawl-depth": "The maximum depth the ajax spider can crawl (default value 0 = no limit)",
+            "max-crawl-states": "The maximum number of states that the crawler should crawl (default value 0 = no limit)",
+            "max-duration": "The maximum duration the ajax spider can crawl (in minutes)",
+            "browser-windows": "The number of windows to be used by AJAX Spider",
+            "event-wait": "The time to wait after an event (in milliseconds)",
+            "reload-time": "The time to wait after the page is loaded before interacting with it (in milliseconds)"
+        },
+        "passive-scan": {
+            "enabled": "Whether or not the passive scanning is enabled (Note: the enabled state is not persisted)",
+            "scope-only": "Whether or not the passive scan should be performed only on messages that are in scope",
+            "max-alert": "The maximum number of alerts a passive scan rule should raise",
+            "alert-treshold": "The alert threshold of the passive scanner with the given ID (OFF, DEFAULT, LOW, MEDIUM, HIGH)"
+        },
+        "active-scan": {
+            "max-duration": "The maximum duration the active scanner can scan (in minutes)",
+            "max-rule-duration": "The maximum duration of an individual active scan rules",
+            "host-scan": "The maximum number of hosts that will be scanned at the same time",
+            "thread-host": "The number of threads the scanner will use per host",
+            "delay": "The delay each request from ZAP (in milliseconds)"
+        }
+    }
+}

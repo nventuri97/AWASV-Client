@@ -1,12 +1,14 @@
 import os, sys, getopt, time, json, signal
 from pprint import pprint
+
+from matplotlib.cbook import maxdict
 from lib.stopException import stopException
 from lib.zapv2 import ZAPv2
 from lib.zapAuthentication import ZapAuthentication
 
 class ZapClient(object):
 
-    def __init__(self, zapIp, apiKey, proxy):
+    def __init__(self, zapIp, apiKey, proxy=None):
         if proxy is not None:
             self.zap= ZAPv2(ip=zapIp, apikey=apiKey, proxies={'http': 'http://'+proxy, 'https': 'https://'+proxy})
         else:
@@ -17,16 +19,8 @@ class ZapClient(object):
 
         print("Initial ZAP REST Client configuration done!")
 
-    def stopSignal(self):
+    def stopSignal():
         raise stopException
-    #     if int(self.zap.spider.status()) < 100:
-    #         self.zap.spider.stop_all_scans()
-    #     if self.zap.ajaxSpider.status=='running':
-    #         self.zap.spider.stop_all_scans()
-    #     if int(self.zap.ascan.status()) < 100:
-    #         self.zap.ascan.stop_all_scans()
-    #     print("Analysis interrupted by user")
-    #     return self.zap.core.jsonreport()
 
 
     #----------------------------------------SPIDER BLOCK----------------------------------
@@ -39,9 +33,12 @@ class ZapClient(object):
         else:
             scanID = self.zap.spider.scan(target)
 
-        timeout = time.time() + int(self.zap.spider.option_max_duration)   # max duration from now
+        max_duration=int(self.zap.spider.option_max_duration)
+        timeout=None
+        if max_duration > 0:
+            timeout = time.time() + max_duration   # max duration from now
         while int(self.zap.spider.status(scanID)) < 100:
-            if time.time() > timeout:
+            if timeout is not None and time.time() > timeout:
                 break
             # Poll the status until it completes
             print('Spider progress %: {}'.format(self.zap.spider.status(scanID)))
@@ -71,11 +68,14 @@ class ZapClient(object):
             scanID= self.zap.ajaxSpider.scan(target, contextname=context_id)
         else:
             scanID = self.zap.ajaxSpider.scan(target)
-
-        timeout = time.time() + int(self.zap.ajaxSpider.option_max_duration)   # max duration from now
+        
+        max_duration=int(self.zap.ajaxSpider.option_max_duration)
+        timeout=None
+        if max_duration>0:
+            timeout = time.time() + max_duration # max duration from now
         # Loop until the ajax spider has finished or the timeout has exceeded
         while self.zap.ajaxSpider.status == 'running':
-            if time.time() > timeout:
+            if timeout is not None and time.time() > timeout:
                 break
         print('Ajax Spider status ' + self.zap.ajaxSpider.status)
         time.sleep(2)
@@ -131,9 +131,13 @@ class ZapClient(object):
 
     def activeScan(self, target):
         scanID = self.zap.ascan.scan(target)
-        timeout = time.time() + int(self.zap.ascan.option_max_scan_duration_in_mins)   # max duration from now
+
+        max_duration=int(self.zap.ascan.option_max_scan_duration_in_mins)
+        timeout=None
+        if max_duration>None:
+            timeout = time.time() + max_duration   # max duration from now
         while int(self.zap.ascan.status(scanID)) < 100:
-            if time.time() > timeout:
+            if timeout is not None and time.time() > timeout:
                 break
             # Loop until the scanner has finished
             print('Scan progress %: {}'.format(self.zap.ascan.status(scanID)))
@@ -161,14 +165,9 @@ class ZapClient(object):
 
     #---------------------------------EXECUTION BLOCK---------------------------------------
     def execute(self, configAttack):
-        ipTarget=configAttack["ipTarget"]
+        target=configAttack["urlTarget"]
         strength=configAttack["strength"]
         auth=False
-        if 'initial-page' in configAttack:
-            initialPage=configAttack["initial-page"]
-            target = 'http://'+ipTarget+'/'+initialPage
-        else:
-            target = 'http://'+ipTarget
 
         if 'authenticated' in configAttack:
             print("Authenticated scan will be performed")
@@ -186,7 +185,7 @@ class ZapClient(object):
             (context_id, user_id)=zapAuth.getAuthenticated()
 
         if "configuration" in configAttack:
-            print("Analysis with personalized configuration and "+strength+" at target "+target)
+            print("Analysis with personalized configuration and "+strength+" strength at target "+target)
             configuration=configAttack["configuration"]
             if "spider" in configuration:
                 self.configSpider(configuration["spider"])
@@ -197,7 +196,7 @@ class ZapClient(object):
             if "active-scan" in configuration:
                 self.configActiveScan(configuration["active-scan"])
         else:
-            print("Analysis with default configuration and "+strength+" at target "+target)
+            print("Analysis with default configuration and "+strength+" strength at target "+target)
 
         try:
             if strength=="low":
@@ -227,6 +226,8 @@ class ZapClient(object):
                 self.activeScan(target)
             else:
                 print("Strength value not permitted")
+            return self.zap.core.jsonreport()
+
         except stopException: 
             if int(self.zap.spider.status()) < 100:
                 self.zap.spider.stop_all_scans()
@@ -236,4 +237,4 @@ class ZapClient(object):
                 self.zap.ascan.stop_all_scans()
             print("Analysis interrupted by user")
 
-        return self.zap.core.jsonreport()
+            return self.zap.core.jsonreport()
