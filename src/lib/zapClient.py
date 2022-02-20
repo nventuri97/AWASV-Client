@@ -30,19 +30,20 @@ class ZapClient(object):
         #if scan is authenticated or not
         if context_id is not None and user_id is not None :
             self.zap.spider.scan_as_user(context_id, user_id, target, recurse='true')
+            return self.zap.spider.results()
         else:
             scanID = self.zap.spider.scan(target)
 
-        max_duration=int(self.zap.spider.option_max_duration)
-        timeout=None
-        if max_duration > 0:
-            timeout = time.time() + max_duration   # max duration from now
-        while int(self.zap.spider.status(scanID)) < 100:
-            if timeout is not None and time.time() > timeout:
-                break
-            # Poll the status until it completes
-            print('Spider progress %: {}'.format(self.zap.spider.status(scanID)))
-            time.sleep(1)
+            max_duration=int(self.zap.spider.option_max_duration)
+            timeout=None
+            if max_duration > 0:
+                timeout = time.time() + max_duration   # max duration from now
+            while int(self.zap.spider.status(scanID)) < 100:
+                if timeout is not None and time.time() > timeout:
+                    break
+                # Poll the status until it completes
+                print('Spider progress %: {}'.format(self.zap.spider.status(scanID)))
+                time.sleep(1)
         
         print('Spider has completed!')
         # Prints the URLs the spider has crawled
@@ -53,13 +54,14 @@ class ZapClient(object):
     def configSpider(self, spiderConfiguration):
         print("Configuring spider")
         if "max-children" in spiderConfiguration:
-            self.zap.spider.set_option_max_children(spiderConfiguration["max-children"], self.zap.__apikey)
+            self.zap.spider.set_option_max_children(spiderConfiguration["max-children"])
+            print(self.zap.spider.option_max_children)
         if "max-depth" in spiderConfiguration:
-            self.zap.spider.set_option_max_depth(spiderConfiguration["max-depth"], self.zap.__apikey)
+            self.zap.spider.set_option_max_depth(spiderConfiguration["max-depth"])
         if "max-duration" in spiderConfiguration:
-            self.zap.spider.set_option_max_duration(spiderConfiguration["max-duration"], self.zap.__apikey)
+            self.zap.spider.set_option_max_duration(spiderConfiguration["max-duration"])
         if "max-psb" in spiderConfiguration:
-            self.zap.spider.set_option_max_parse_size_bytes(spiderConfiguration["max-psb"], self.zap.__apikey)
+            self.zap.spider.set_option_max_parse_size_bytes(spiderConfiguration["max-psb"])
         print("Spider configured")
 
     #-------------------------------------AJAX SPIDER BLOCK----------------------------------
@@ -87,17 +89,17 @@ class ZapClient(object):
     def configAjaxSpider(self, ajaxSpiderConfiguration):
         print("Configuring ajax spider")
         if "max-crawl-depth" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_max_crawl_depth(ajaxSpiderConfiguration["max-crawl-depth"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_max_crawl_depth(ajaxSpiderConfiguration["max-crawl-depth"])
         if "max-crawl-states" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_max_crawl_states(ajaxSpiderConfiguration["max-crawl-states"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_max_crawl_states(ajaxSpiderConfiguration["max-crawl-states"])
         if "max-duration" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_max_duration(ajaxSpiderConfiguration["max-duration"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_max_duration(ajaxSpiderConfiguration["max-duration"])
         if "browser-windows" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_number_of_browsers(ajaxSpiderConfiguration["browser-windows"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_number_of_browsers(ajaxSpiderConfiguration["browser-windows"])
         if "event-wait" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_event_wait(ajaxSpiderConfiguration["event-wait"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_event_wait(ajaxSpiderConfiguration["event-wait"])
         if "reload-time" in ajaxSpiderConfiguration:
-            self.zap.ajaxSpider.set_option_reload_wait(ajaxSpiderConfiguration["reload-time"], self.zap.__apikey)
+            self.zap.ajaxSpider.set_option_reload_wait(ajaxSpiderConfiguration["reload-time"])
         print("Ajax spider configured")
 
     #-------------------------------------PASSIVE SCAN BLOCK----------------------------------
@@ -118,13 +120,13 @@ class ZapClient(object):
     def configPassiveScan(self, passiveScanConfiguration):
         print("Configuring passive scanner")
         if "enabled" in passiveScanConfiguration:
-            self.zap.pscan.set_enabled(passiveScanConfiguration["enabled"], self.zap.__apikey)
+            self.zap.pscan.set_enabled(passiveScanConfiguration["enabled"])
         if "scope-only" in passiveScanConfiguration:
-            self.zap.pscan.set_scan_only_in_scope(passiveScanConfiguration["scope-only"], self.zap.__apikey)
+            self.zap.pscan.set_scan_only_in_scope(passiveScanConfiguration["scope-only"])
         if "max-alert" in passiveScanConfiguration:
-            self.zap.pscan.set_max_alerts_per_rule(passiveScanConfiguration["max-alert"], self.zap.__apikey)
+            self.zap.pscan.set_max_alerts_per_rule(passiveScanConfiguration["max-alert"])
         if "alert-treshold" in passiveScanConfiguration:
-            self.zap.pscan.set_scanner_alert_threshold(passiveScanConfiguration["alert-treshold"], self.zap.__apikey)
+            self.zap.pscan.set_scanner_alert_threshold(passiveScanConfiguration["alert-treshold"])
         print("Passive scanner configured")
 
     #-------------------------------------ACTIVE SCAN BLOCK----------------------------------
@@ -134,7 +136,7 @@ class ZapClient(object):
 
         max_duration=int(self.zap.ascan.option_max_scan_duration_in_mins)
         timeout=None
-        if max_duration>None:
+        if max_duration is not None:
             timeout = time.time() + max_duration   # max duration from now
         while int(self.zap.ascan.status(scanID)) < 100:
             if timeout is not None and time.time() > timeout:
@@ -152,19 +154,23 @@ class ZapClient(object):
     def configActiveScan(self, activeScanConfiguration):
         print("Configuring active scanner")
         if "max-duration" in activeScanConfiguration:
-            self.zap.ascan.set_option_max_scan_duration_in_mins(activeScanConfiguration["max-duration"], self.zap.__apikey)
+            self.zap.ascan.set_option_max_scan_duration_in_mins(activeScanConfiguration["max-duration"])
         if "max-rule-duration" in activeScanConfiguration:
-            self.zap.ascan.set_option_max_rule_duration_in_mins(activeScanConfiguration["max-rule-duration"], self.zap.__apikey)
+            self.zap.ascan.set_option_max_rule_duration_in_mins(activeScanConfiguration["max-rule-duration"])
         if "host-scan" in activeScanConfiguration:
-            self.zap.ascan.set_option_host_per_scan(activeScanConfiguration["host-scan"], self.zap.__apikey)
+            self.zap.ascan.set_option_host_per_scan(activeScanConfiguration["host-scan"])
         if "thread-host" in activeScanConfiguration:
-            self.zap.ascan.set_option_thread_per_host(activeScanConfiguration["thread-host"], self.zap.__apikey)
+            self.zap.ascan.set_option_thread_per_host(activeScanConfiguration["thread-host"])
         if "delay" in activeScanConfiguration:
-            self.zap.ascan.set_option_delay_in_ms(activeScanConfiguration["delay"], self.zap.__apikey)
+            self.zap.ascan.set_option_delay_in_ms(activeScanConfiguration["delay"])
         print("Active scanner configured")
 
     #---------------------------------EXECUTION BLOCK---------------------------------------
     def execute(self, configAttack):
+        if ('urlTarget' or 'strength') not in configAttack:
+            print("URL Target or strength parameter are missing, but they are mandatory")
+            return None
+
         target=configAttack["urlTarget"]
         strength=configAttack["strength"]
         auth=False
@@ -174,7 +180,8 @@ class ZapClient(object):
             authenticated=configAttack["authenticated"]
             auth=True
             if ('username' or 'passwd' or 'login-page' or 'logout-page') not in authenticated:
-                 sys.exit("If the analysis is authenticated insert in attackFile both username, password, login page than logout page")
+                print("If the analysis is authenticated insert in attackFile both username, password, login page than logout page")
+                return None
 
             username=authenticated["username"]
             passwd=authenticated["passwd"]
@@ -226,7 +233,9 @@ class ZapClient(object):
                 self.activeScan(target)
             else:
                 print("Strength value not permitted")
-            return self.zap.core.jsonreport()
+                return None
+
+            return self.zap.core.htmlreport()
 
         except stopException: 
             if int(self.zap.spider.status()) < 100:
@@ -237,4 +246,4 @@ class ZapClient(object):
                 self.zap.ascan.stop_all_scans()
             print("Analysis interrupted by user")
 
-            return self.zap.core.jsonreport()
+            return self.zap.core.htmlreport()

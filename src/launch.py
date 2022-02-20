@@ -12,8 +12,8 @@ argumentList=sys.argv[1:]
 if len(argumentList)==0:
     sys.exit("Error! API key is required")
 
-options="hz:p:k:"
-long_options= ["help","zap=","port=","apikey=" "proxies="]
+options="hz:k:p:"
+long_options= ["help","zap=","apikey=" "proxies="]
 
 #Default value for ZAP initialization
 zapIp="127.0.0.1"
@@ -32,8 +32,8 @@ try:
             zapIp=currentValue
         elif currentArgument in ("-k", "--apikey"):
             apikey=currentValue
-        elif currentArgument in ("proxy"):
-            proxy=currentValue
+        elif currentArgument in ("-p","--proxies"):
+            proxies=currentValue
 
 except getopt.error as err:
     # output error, and return with an error code
@@ -45,10 +45,10 @@ while True:
         f=open("./attackFile.json")
         configAttack=json.load(f)
         report=client.execute(configAttack=configAttack)
-        with open('./report.json', 'w') as f:
-            f.write(report)
+        if report is not None:
+            with open('./report.html', 'w') as f:
+                f.write(report)
         
-        #performe attack
         # os.remove("./attackFile.json")
         break
     else:
