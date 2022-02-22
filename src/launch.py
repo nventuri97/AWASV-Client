@@ -44,9 +44,12 @@ while True:
     if os.path.isfile("./attackFile.json"):
         f=open("./attackFile.json")
         configAttack=json.load(f)
+        appName=configAttack["app-name"]
+        if not os.path.exists("../"+appName):
+            os.mkdir("../"+appName)
         report=client.execute(configAttack=configAttack)
         if report is not None:
-            with open('./report.html', 'w') as f:
+            with open('../'+appName+'/report-'+appName+'-'+time.strftime("%Y%m%d-%H%M%S")+'.html', 'w') as f:
                 f.write(report)
         
         # os.remove("./attackFile.json")

@@ -1,4 +1,5 @@
 {
+    "app-name": "The name of the app to scan",
     "urlTarget": "The URL of the target application",
     "strength": "The strength with which the analysis will be runn (low, medium, high)",
     "authenticated" : {

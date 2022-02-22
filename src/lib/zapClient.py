@@ -1,7 +1,5 @@
 import os, sys, getopt, time, json, signal
 from pprint import pprint
-
-from matplotlib.cbook import maxdict
 from lib.stopException import stopException
 from lib.zapv2 import ZAPv2
 from lib.zapAuthentication import ZapAuthentication
@@ -131,9 +129,9 @@ class ZapClient(object):
 
     #-------------------------------------ACTIVE SCAN BLOCK----------------------------------
 
-    def activeScan(self, target):
-        scanID = self.zap.ascan.scan(target)
-
+    def activeScan(self, target, context_id=None):
+        scanID = self.zap.ascan.scan(url=target, contextid=context_id)
+        print(scanID)
         max_duration=int(self.zap.ascan.option_max_scan_duration_in_mins)
         timeout=None
         if max_duration is not None:
@@ -226,11 +224,14 @@ class ZapClient(object):
                 if not auth:
                     spiderResults=self.spider(target)
                     ajaxResults=self.ajaxSpider(target)
+                    self.passiveScan()
+                    self.activeScan(target)
                 else:
                     spiderResult=self.spider(target, context_id, user_id)
                     ajaxResults=self.ajaxSpider(target, context_id)
-                self.passiveScan()
-                self.activeScan(target)
+                    self.passiveScan()
+                    self.activeScan(target, context_id)
+                
             else:
                 print("Strength value not permitted")
                 return None
