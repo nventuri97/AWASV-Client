@@ -4,7 +4,7 @@ from lib.stopException import stopException
 from lib.zapv2 import ZAPv2
 from lib.zapAuthentication import ZapAuthentication
 
-class ZapClient(object):
+class AWASVClient(object):
 
     def __init__(self, zapIp, apiKey, proxy=None):
         if proxy is not None:

@@ -52,8 +52,8 @@ while True:
             with open('../'+appName+'/report-'+appName+'-'+time.strftime("%Y%m%d-%H%M%S")+'.html', 'w') as f:
                 f.write(report)
         
-        # os.remove("./attackFile.json")
-        break
+        os.remove("./attackFile.json")
+
     else:
         print("Waiting for attack file")
         time.sleep(30)
